@@ -22,6 +22,12 @@ let login = localStorage.getItem('user');
 
 function toggleModalAuth() { 
   modalAuth.classList.toggle('is-open');
+  loginInput.style.borderColor = '';
+  if (modalAuth.classList.contains('is-open')) {
+    disableScroll();
+  } else { 
+    enableScroll();
+  }
 }
 
 function authorized() { 
@@ -47,11 +53,12 @@ function notAuthorized() {
 
   function logIn(evt) { 
     evt.preventDefault();
-    login = loginInput.value;
-    if (!login.length) {
-      loginInput.style.borderColor = 'red';
+    if (!loginInput.value.trim()) {
+      loginInput.style.borderColor = '#ff0000';
+      loginInput.value = '';
       return;
     } else { 
+      login = loginInput.value;
       localStorage.setItem('user', login);
       toggleModalAuth();
       buttonAuth.removeEventListener('click', toggleModalAuth);
@@ -65,6 +72,11 @@ function notAuthorized() {
   buttonAuth.addEventListener('click', toggleModalAuth);
   closeAuth.addEventListener('click', toggleModalAuth);
   logInForm.addEventListener('submit', logIn);
+  modalAuth.addEventListener('click', function (evt) { 
+    if (evt.target.classList.contains('is-open')) { 
+      toggleModalAuth();
+    }
+  })
 
 }
 
@@ -76,5 +88,26 @@ function checkAuth() {
   };
 }
 
-checkAuth();
+function disableScroll() { 
 
+  const widthScroll = window.innerWidth - document.body.offsetWidth;
+
+  document.body.dbscrollY = window.scrollY;
+
+  document.body.style.cssText = `
+    position: fixed;
+    top: ${-window.scrollY}px;
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    height: 100vh;
+    padding-right: ${widthScroll}px;
+  `;
+}
+
+function enableScroll() { 
+  document.body.style.cssText = '';
+  window.scroll({top: document.body.dbscrollY});
+}
+
+checkAuth();
