@@ -1,4 +1,5 @@
 'use strict';
+import Swiper from 'https://unpkg.com/swiper/swiper-bundle.esm.browser.min.js';
 
 const cartButton = document.querySelector("#cart-button");
 const modal = document.querySelector(".modal");
@@ -18,6 +19,8 @@ const cardsMenu = document.querySelector('.cards-menu');
 const logo = document.querySelector('.logo');
 let login = localStorage.getItem('user');
 
+
+
 function toggleModal() {
 	modal.classList.toggle("is-open");
 }
@@ -30,6 +33,11 @@ function toggleModalAuth() {
 	} else { 
 		enableScroll();
 	}
+}
+
+function validName(str) { 
+	const regName = /^[а-яА-ЯёЁa-zA-Z][а-яА-ЯёЁa-zA-Z0-9-_\.]{1,20}$/;
+	return regName.test(str);
 }
 
 function authorized() { 
@@ -55,11 +63,7 @@ function notAuthorized() {
 
 	function logIn(evt) { 
 		evt.preventDefault();
-		if (!loginInput.value.trim()) {
-			loginInput.style.borderColor = '#ff0000';
-			loginInput.value = '';
-			return;
-		} else { 
+		if (validName(loginInput.value)) {
 			login = loginInput.value;
 			localStorage.setItem('user', login);
 			toggleModalAuth();
@@ -68,6 +72,9 @@ function notAuthorized() {
 			logInForm.removeEventListener('submit', logIn);
 			logInForm.reset();
 			checkAuth();
+		} else { 
+			loginInput.style.borderColor = '#ff0000';
+			loginInput.value = '';
 		}
 	}
 
@@ -191,3 +198,24 @@ checkAuth();
 createCardsRestaurants();
 createCardsRestaurants();
 createCardsRestaurants();
+
+//slider
+new Swiper('.swiper-container', {
+	sliderPerView: 1,
+	loop: true,
+	autoplay: true,
+	grabCursor: true,
+	effect: 'cube',
+	cubeEffect: {
+		shadow: false,
+	},
+	pagination: {
+		el: '.swiper-pagination',
+		clickable: true,
+	},
+	// effect: 'flip',
+	// scrollbar: {
+	// 	el: '.swiper-scrollbar',
+	// 	draggable: true,
+	// },
+});
