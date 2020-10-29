@@ -17,9 +17,26 @@ const containerPromo = document.querySelector('.container-promo');
 const menu = document.querySelector('.menu');
 const cardsMenu = document.querySelector('.cards-menu');
 const logo = document.querySelector('.logo');
+const restaurantTitle = document.querySelector('.restaurant-title');
+const restaurantRating = document.querySelector('.rating');
+const restaurantPrice = document.querySelector('.price');
+const restaurantCategory = document.querySelector('.category');
+const inputSearch = document.querySelector('.input-search');
+const RED_COLOR = '#ff0000';
+
 let login = localStorage.getItem('user');
 
 
+const getData = async function (url) {
+	const response = await fetch(url);
+
+	if (!response.ok) { 
+		throw new Error(`Ошибка по адресу ${url},
+		статус ошибки ${response.status}!`);
+	}
+
+	return await response.json();
+};
 
 function toggleModal() {
 	modal.classList.toggle("is-open");
@@ -73,7 +90,7 @@ function notAuthorized() {
 			logInForm.reset();
 			checkAuth();
 		} else { 
-			loginInput.style.borderColor = '#ff0000';
+			loginInput.style.borderColor = RED_COLOR;
 			loginInput.value = '';
 		}
 	}
@@ -119,53 +136,74 @@ function enableScroll() {
 	window.scroll({top: document.body.dbscrollY});
 }
 
-function createCardsRestaurants() { 
+function createCardsRestaurant({ name, time_of_delivery: timeOfDelivery, stars, price, kitchen, image, products }) { 
+	const cardRestaurant = document.createElement('a');
+	cardRestaurant.className = 'card card-restaurant';
+	cardRestaurant.products = products;
+	cardRestaurant.info = { name, stars, price, kitchen };
+
 	const card = `
-		<a class="card card-restaurant">
-			<img src="img/pizza-plus/preview.jpg" alt="image" class="card-image"/>
+			<img src=${image} alt=${name} class="card-image"/>
 			<div class="card-text">
 				<div class="card-heading">
-					<h3 class="card-title">Пицца плюс</h3>
-					<span class="card-tag tag">50 мин</span>
+					<h3 class="card-title">${name}</h3>
+					<span class="card-tag tag">${timeOfDelivery}</span>
 				</div>
 				<div class="card-info">
 					<div class="rating">
-						4.5
+						${stars}
 					</div>
-						<div class="price">От 900 ₽</div>
-						<div class="category">Пицца</div>
+						<div class="price">От ${price} ₽</div>
+						<div class="category">${kitchen}</div>
 				</div>
 			</div>
-		</a>
 	`;
 
-	cardsRestaurants.insertAdjacentHTML('beforeend', card);
+	cardRestaurant.insertAdjacentHTML('beforeend', card);
+	cardsRestaurants.insertAdjacentElement('beforeend', cardRestaurant);
 }
 
-function createCardGood() { 
+function createCardGood({name, description, price, image}) { 
 	const card = document.createElement('div');
 	card.className = 'card';
 	card.insertAdjacentHTML('beforeend', `
-			<img src="img/pizza-plus/pizza-vesuvius.jpg" alt="image" class="card-image"/>
+			<img src=${image} alt=${name} class="card-image"/>
 			<div class="card-text">
 				<div class="card-heading">
-					<h3 class="card-title card-title-reg">Пицца Везувий</h3>
+					<h3 class="card-title card-title-reg">${name}</h3>
 				</div>
 				<div class="card-info">
-					<div class="ingredients">Соус томатный, сыр «Моцарелла», ветчина, пепперони, перец
-									«Халапенье», соус «Тобаско», томаты.
-					</div>
+					<p class="ingredients">
+					${description}
+					</p>
 				</div>
 				<div class="card-buttons">
 					<button class="button button-primary button-add-cart">
 						<span class="button-card-text">В корзину</span>
 						<span class="button-cart-svg"></span>
 					</button>
-					<strong class="card-price-bold">545 ₽</strong>
+					<strong class="card-price-bold">${price} ₽</strong>
 				</div>
 			</div>
 	`);
 	cardsMenu.insertAdjacentElement('beforeend', card);
+}
+
+function createMenuHeading({products}) { 
+	const menuHead = document.createElement('div');
+	menuHead.className = `section-heading data-menu=${products}`;
+	const itemMenu = `
+		<h2 class="section-title restaurant-title">Пицца Плюс</h2>
+		<div class="card-info">
+			<div class="rating">
+				4.5
+			</div>
+			<div class="price">От 900 ₽</div>
+			<div class="category">Пицца</div>
+		</div>
+	`;
+
+	menuHead.insertAdjacentHTML('beforeend', itemMenu);
 }
 
 function openGoods(evt) { 
@@ -177,7 +215,13 @@ function openGoods(evt) {
 		restaurants.classList.add('hide');
 		containerPromo.classList.add('hide');
 		menu.classList.remove('hide');
-		createCardGood();
+		const { name, stars, price, kitchen} = restaurant.info;
+		restaurantTitle.textContent = name;
+		restaurantRating.textContent = stars;
+		restaurantPrice.textContent = `От ${price} ₽`;
+		restaurantCategory.textContent = kitchen;
+		getData(`./db/${restaurant.products}`)
+			.then((data) => data.forEach(createCardGood));
 	} else if (restaurant) { 
 		toggleModalAuth();
 	}
@@ -189,33 +233,66 @@ function closeGoods() {
 	menu.classList.add('hide');
 }
 
-cartButton.addEventListener("click", toggleModal);
-close.addEventListener("click", toggleModal);
-cardsRestaurants.addEventListener('click', openGoods);
-logo.addEventListener('click', closeGoods);
+function init() { 
+	getData('./db/partners.json')
+		.then((data) => data.forEach(createCardsRestaurant));
 
-checkAuth();
-createCardsRestaurants();
-createCardsRestaurants();
-createCardsRestaurants();
+	cartButton.addEventListener("click", toggleModal);
+	close.addEventListener("click", toggleModal);
+	cardsRestaurants.addEventListener('click', openGoods);
+	logo.addEventListener('click', closeGoods);
+	inputSearch.addEventListener('keypress', function (evt) { 
+		if (evt.charCode === 13) { 
+			const value = evt.target.value.trim().toLowerCase();
 
-//slider
-new Swiper('.swiper-container', {
-	sliderPerView: 1,
-	loop: true,
-	autoplay: true,
-	grabCursor: true,
-	effect: 'cube',
-	cubeEffect: {
-		shadow: false,
-	},
-	pagination: {
-		el: '.swiper-pagination',
-		clickable: true,
-	},
-	// effect: 'flip',
-	// scrollbar: {
-	// 	el: '.swiper-scrollbar',
-	// 	draggable: true,
-	// },
-});
+			if (!value) { 
+				evt.target.value = '';
+				evt.target.style.backgroundColor = RED_COLOR;
+				setTimeout(() => evt.target.style.backgroundColor = '', 1000)
+				return;
+			}
+
+			getData('./db/partners.json')
+				.then((data) => data.map((partner) => partner.products))
+				.then((linksProduct) => { 
+					cardsMenu.textContent = '';
+					linksProduct.forEach((link) => { 
+						getData(`./db/${link}`)
+							.then((data) => { 
+								const resultSearch = data.filter((item) => {
+									const name = item.name.toLowerCase();
+									return name.includes(value);
+								});
+								restaurants.classList.add('hide');
+								containerPromo.classList.add('hide');
+								menu.classList.remove('hide');
+								restaurantTitle.textContent = 'Рузультат поиска';
+								restaurantRating.textContent = '';
+								restaurantPrice.textContent = '';
+								restaurantCategory.textContent = 'разная кухня';
+								resultSearch.forEach(createCardGood);
+							})
+					})
+				})
+		};
+	});
+
+	checkAuth();
+
+	new Swiper('.swiper-container', {
+		sliderPerView: 1,
+		loop: true,
+		autoplay: true,
+		grabCursor: true,
+		effect: 'cube',
+		cubeEffect: {
+			shadow: false,
+		},
+		pagination: {
+			el: '.swiper-pagination',
+			clickable: true,
+		},
+	});
+}
+
+init();
