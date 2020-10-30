@@ -1,6 +1,19 @@
 'use strict';
 import Swiper from 'https://unpkg.com/swiper/swiper-bundle.esm.browser.min.js';
 
+const optionSwiper = {
+	sliderPerView: 1,
+	loop: true,
+	autoplay: true,
+	grabCursor: true,
+	effect: 'coverflow',
+	cubeEffect: {
+		shadow: false,
+	}
+}; 
+
+const swiper =	new Swiper('.swiper-container', optionSwiper);
+
 const cartButton = document.querySelector("#cart-button");
 const modal = document.querySelector(".modal");
 const close = document.querySelector(".close");
@@ -22,14 +35,27 @@ const restaurantRating = document.querySelector('.rating');
 const restaurantPrice = document.querySelector('.price');
 const restaurantCategory = document.querySelector('.category');
 const inputSearch = document.querySelector('.input-search');
+const inputAdress = document.querySelector('.input-address');
 const modalBody = document.querySelector('.modal-body');
 const modalPrice = document.querySelector('.modal-pricetag');
 const buttonClearCart = document.querySelector('.clear-cart');
 const RED_COLOR = '#ff0000';
 
+
 let login = localStorage.getItem('user');
 
-const cart = [];
+const cart = JSON.parse(localStorage.getItem(`user_${login}`)) || [];
+
+function saveCart() { 
+	localStorage.setItem(`user_${login}`, JSON.stringify(cart));
+}
+
+function dowmloadCart() { 
+	if (localStorage.getItem(`user_${login}`)) { 
+		const data = JSON.parse(localStorage.getItem(`user_${login}`));
+		cart.push(...data);
+	}
+}
 
 const getData = async function (url) {
 	const response = await fetch(url);
@@ -65,6 +91,7 @@ function authorized() {
 
 	function logOut() { 
 		login = null;
+		cart.length = 0;
 		localStorage.removeItem('user');
 		buttonAuth.style.display = '';
 		userName.style.display = '';
@@ -72,6 +99,7 @@ function authorized() {
 		cartButton.style.display = '';
 		buttonOut.removeEventListener('click', logOut);
 		checkAuth();
+		returnMain();
 	}
 
 	userName.textContent = login;
@@ -86,10 +114,14 @@ function notAuthorized() {
 
 	function logIn(evt) { 
 		evt.preventDefault();
+
+
+
 		if (validName(loginInput.value)) {
 			login = loginInput.value;
 			localStorage.setItem('user', login);
 			toggleModalAuth();
+			dowmloadCart();
 			buttonAuth.removeEventListener('click', toggleModalAuth);
 			closeAuth.removeEventListener('click', toggleModalAuth);
 			logInForm.removeEventListener('submit', logIn);
@@ -203,6 +235,7 @@ function openGoods(evt) {
 		cardsMenu.textContent = '';
 		restaurants.classList.add('hide');
 		containerPromo.classList.add('hide');
+		swiper.destroy(false);
 		menu.classList.remove('hide');
 		const { name, stars, price, kitchen} = restaurant.info;
 		restaurantTitle.textContent = name;
@@ -216,9 +249,10 @@ function openGoods(evt) {
 	}
 }
 
-function closeGoods() { 
+function returnMain() { 
 	restaurants.classList.remove('hide');
 	containerPromo.classList.remove('hide');
+	swiper.init('.swiper-container', optionSwiper);
 	menu.classList.add('hide');
 }
 
@@ -243,6 +277,7 @@ function addToCart(evt) {
 			});
 		}
 	};
+	saveCart();
 }
 
 function renderCart() { 
@@ -266,6 +301,7 @@ function renderCart() {
 		return result + parseFloat(item.cost) * item.count;
 	}, 0);
 	modalPrice.textContent = totalPrice + ' ₽';
+	saveCart();
 }
 
 function changeCount(evt) { 
@@ -297,12 +333,13 @@ function init() {
 	buttonClearCart.addEventListener('click', () => {
 		cart.length = 0;
 		renderCart();
+		toggleModal();
 	});
 	modalBody.addEventListener('click', changeCount);
 	cardsMenu.addEventListener('click', addToCart);
 	close.addEventListener('click', toggleModal);
 	cardsRestaurants.addEventListener('click', openGoods);
-	logo.addEventListener('click', closeGoods);
+	logo.addEventListener('click', returnMain);
 	inputSearch.addEventListener('keypress', function (evt) { 
 		if (evt.charCode === 13) { 
 			const value = evt.target.value.trim().toLowerCase();
@@ -327,6 +364,7 @@ function init() {
 								});
 								restaurants.classList.add('hide');
 								containerPromo.classList.add('hide');
+								swiper.destroy(false);
 								menu.classList.remove('hide');
 								restaurantTitle.textContent = 'Рузультат поиска';
 								restaurantRating.textContent = '';
@@ -338,19 +376,7 @@ function init() {
 				})
 		};
 	});
-
 	checkAuth();
-
-	new Swiper('.swiper-container', {
-		sliderPerView: 1,
-		loop: true,
-		autoplay: true,
-		grabCursor: true,
-		effect: 'cube',
-		cubeEffect: {
-			shadow: false,
-		},
-	});
 }
 
 init();
